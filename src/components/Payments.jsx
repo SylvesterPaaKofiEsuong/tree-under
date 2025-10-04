@@ -31,6 +31,8 @@ export default function Payments({ onNavigate }) {
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [showCamera, setShowCamera] = useState(false);
   const [paymentNotes, setPaymentNotes] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [justPaidSellers, setJustPaidSellers] = useState(new Set());
   
   const { openCamera, closeCamera, capturePhoto, isOpen: cameraActive, videoRef, photo: cameraPhoto, error: cameraError } = useCamera();
   
@@ -61,25 +63,32 @@ export default function Payments({ onNavigate }) {
   
   // Calculate payment data for each seller
   const getPaymentData = () => {
+    if (!sellers.length) return [];
+    
     return sellers.map(seller => {
       // Count attendance days for this seller this week
       const attendanceDays = weekAttendance.filter(att => att.sellerId === seller.id).length;
       const feeAmount = attendanceDays * seller.feeRate;
       
-      // Check if already paid this week
+      // Check if already paid this week or just paid
       const existingPayment = existingPayments.find(payment => payment.sellerId === seller.id);
+      const isJustPaid = justPaidSellers.has(seller.id);
+      const isPaid = !!existingPayment || isJustPaid;
       
       return {
         ...seller,
         attendanceDays,
         feeAmount,
-        isPaid: !!existingPayment,
-        paymentRecord: existingPayment
+        isPaid,
+        paymentRecord: existingPayment,
+        isJustPaid,
+        // Add a key for React to detect changes
+        paymentStatus: isPaid ? 'paid' : (feeAmount > 0 ? 'pending' : 'no_work')
       };
     });
   };
   
-  const paymentData = getPaymentData();
+  const paymentData = React.useMemo(() => getPaymentData(), [sellers, weekAttendance, existingPayments, justPaidSellers, refreshKey]);
   const totalCollectable = paymentData.reduce((sum, seller) => sum + (seller.isPaid ? 0 : seller.feeAmount), 0);
   const totalCollected = paymentData.reduce((sum, seller) => sum + (seller.isPaid ? seller.feeAmount : 0), 0);
   const totalOutstanding = totalCollectable;
@@ -135,13 +144,29 @@ export default function Payments({ onNavigate }) {
         timestamp: new Date().toISOString()
       };
       
-      await addDocument(paymentRecord);
+      const newPayment = await addDocument(paymentRecord);
+      
+      // Mark seller as just paid for immediate UI feedback
+      setJustPaidSellers(prev => new Set([...prev, sellerData.id]));
       
       // Reset form
       setShowPaymentModal(null);
       setCapturedPhoto(null);
       setPhotoPreview(null);
       setPaymentNotes('');
+      
+      // Clear the "just paid" status after Firestore has had time to update
+      setTimeout(() => {
+        setJustPaidSellers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(sellerData.id);
+          return newSet;
+        });
+        setRefreshKey(prev => prev + 1);
+      }, 2000);
+      
+      // Show success message
+      alert(`Payment of ${formatCurrency(sellerData.feeAmount)} collected successfully for ${sellerData.name}!`);
       
     } catch (error) {
       console.error('Payment collection error:', error);
@@ -285,8 +310,12 @@ export default function Payments({ onNavigate }) {
                       {seller.name}
                     </h3>
                     {seller.isPaid && (
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                        ✓ Paid
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        seller.isJustPaid 
+                          ? 'bg-blue-100 text-blue-800 animate-pulse' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        ✓ {seller.isJustPaid ? 'Just Paid' : 'Paid'}
                       </span>
                     )}
                   </div>
