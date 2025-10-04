@@ -13,14 +13,26 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'Tree Under Checklist',
+        name: 'Tree Under Checklist - Canteen Fee Tracking',
         short_name: 'TUC',
-        description: 'Canteen Fee Tracking System',
-        theme_color: '#16a34a',
+        description: 'Professional canteen fee tracking system for schools with attendance, payment collection, and comprehensive analytics.',
+        theme_color: '#059669',
         background_color: '#ffffff',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'portrait-primary',
         start_url: '/',
+        scope: '/',
+        lang: 'en',
+        categories: ['business', 'education', 'productivity'],
+        screenshots: [
+          {
+            src: '/screenshot-mobile-1.png',
+            sizes: '375x667',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'Dashboard view on mobile'
+          }
+        ],
         icons: [
           {
             src: '/icon-192.png',
@@ -31,6 +43,12 @@ export default defineConfig({
           {
             src: '/icon-512.png',
             sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/apple-touch-icon.png',
+            sizes: '180x180',
             type: 'image/png'
           }
         ]

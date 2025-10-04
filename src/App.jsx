@@ -8,6 +8,7 @@ import Attendance from './components/Attendance';
 import Payments from './components/Payments';
 import Reports from './components/Reports';
 import SellerManagement from './components/SellerManagement';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 import { useOfflineSync } from './hooks/useOfflineSync';
 import { Toaster } from 'react-hot-toast';
 
@@ -63,7 +64,8 @@ function AppContent() {
       <main className="pb-6">
         {renderView()}
       </main>
-      <Toaster 
+      <PWAInstallPrompt />
+      <Toaster
         position="top-right"
         toastOptions={{
           duration: 4000,

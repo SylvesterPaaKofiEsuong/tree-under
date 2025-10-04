@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree Under Checklist - Icon Generator</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        .icon-preview {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .icon-container {
+            text-align: center;
+        }
+        canvas {
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 8px;
+        }
+        button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 8px;
+        }
+        button:hover {
+            background: #047857;
+        }
+        .download-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌳 Tree Under Checklist - PWA Icons</h1>
+    <p>Generate high-quality icons for your PWA installation.</p>
+    
+    <div class="icon-preview" id="iconPreview">
+        <!-- Icons will be generated here -->
+    </div>
+    
+    <div class="download-section">
+        <button onclick="generateAllIcons()">Generate Icons</button>
+        <button onclick="downloadAll()">Download All Icons</button>
+        <p><strong>Instructions:</strong> After downloading, place the icons in your <code>public/</code> folder and update your manifest.json.</p>
+    </div>
+
+    <script>
+        function createIcon(size, filename) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#059669'); // Primary green
+            gradient.addColorStop(1, '#047857'); // Darker green
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Tree icon (simplified)
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const scale = size / 192; // Base scale for 192px
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3 * scale;
+            
+            // Tree trunk
+            const trunkWidth = 20 * scale;
+            const trunkHeight = 40 * scale;
+            ctx.fillRect(centerX - trunkWidth/2, centerY + 20 * scale, trunkWidth, trunkHeight);
+            
+            // Tree leaves (three circles)
+            const leafRadius = 25 * scale;
+            ctx.beginPath();
+            // Top circle
+            ctx.arc(centerX, centerY - 25 * scale, leafRadius, 0, 2 * Math.PI);
+            // Left circle
+            ctx.arc(centerX - 22 * scale, centerY, leafRadius * 0.8, 0, 2 * Math.PI);
+            // Right circle
+            ctx.arc(centerX + 22 * scale, centerY, leafRadius * 0.8, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Add "TUC" text
+            ctx.fillStyle = '#059669';
+            ctx.font = `bold ${16 * scale}px system-ui`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('TUC', centerX, centerY + 5 * scale);
+            
+            // Add checkmark symbol
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4 * scale;
+            ctx.beginPath();
+            ctx.moveTo(centerX - 15 * scale, centerY - 50 * scale);
+            ctx.lineTo(centerX - 5 * scale, centerY - 35 * scale);
+            ctx.lineTo(centerX + 15 * scale, centerY - 55 * scale);
+            ctx.stroke();
+            
+            return { canvas, filename };
+        }
+        
+        function generateAllIcons() {
+            const sizes = [
+                { size: 192, name: 'icon-192.png' },
+                { size: 512, name: 'icon-512.png' },
+                { size: 180, name: 'apple-touch-icon.png' },
+                { size: 32, name: 'favicon-32x32.png' },
+                { size: 16, name: 'favicon-16x16.png' }
+            ];
+            
+            const preview = document.getElementById('iconPreview');
+            preview.innerHTML = '';
+            
+            window.generatedIcons = sizes.map(({ size, name }) => {
+                const { canvas, filename } = createIcon(size, name);
+                
+                // Add to preview
+                const container = document.createElement('div');
+                container.className = 'icon-container';
+                container.innerHTML = `
+                    <canvas width="${size}" height="${size}" style="width: ${Math.min(size, 128)}px; height: ${Math.min(size, 128)}px;"></canvas>
+                    <div>${name}</div>
+                    <div>${size}x${size}</div>
+                `;
+                
+                const previewCanvas = container.querySelector('canvas');
+                const previewCtx = previewCanvas.getContext('2d');
+                previewCtx.drawImage(canvas, 0, 0);
+                
+                preview.appendChild(container);
+                
+                return { canvas, filename: name };
+            });
+        }
+        
+        function downloadAll() {
+            if (!window.generatedIcons) {
+                alert('Please generate icons first!');
+                return;
+            }
+            
+            window.generatedIcons.forEach(({ canvas, filename }) => {
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            });
+        }
+        
+        // Generate icons on load
+        generateAllIcons();
+    </script>
+</body>
+</html>
