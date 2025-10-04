@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Receipt photos - authenticated users can read and write
+    match /receipts/{fileName} {
+      // Allow authenticated users to read receipt photos
+      allow read: if request.auth != null;
+      
+      // Allow authenticated users to upload images
+      // Max 5MB file size, images only
+      allow write: if request.auth != null &&
+                     request.resource.size < 5 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+    }
+    
+    // Block access to everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

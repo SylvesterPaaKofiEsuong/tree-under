@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is an admin
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Sellers collection - admins can read/write
+    match /sellers/{sellerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // Attendance collection - admins can read/create, no updates
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                      request.resource.data.markedBy == request.auth.uid;
+      allow update, delete: if false; // No modifications allowed for audit trail
+    }
+    
+    // Payments collection - admins can read/create, no updates
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                      request.resource.data.collectedBy == request.auth.uid;
+      allow update, delete: if false; // No modifications allowed for audit trail
+    }
+    
+    // Admins collection - read-only for authenticated users
+    match /admins/{adminId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Must be updated manually in Firebase Console
+    }
+    
+    // Rotation schedule - admins can read/write
+    match /rotation_schedule/{scheduleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+  }
+}
