@@ -20,6 +20,7 @@ const translations = {
 
     // Navigation
     dashboard: 'Dashboard',
+    backToDashboard: 'Back to Dashboard',
     attendance: 'Attendance',
     payments: 'Payments',
     reports: 'Reports',
@@ -72,6 +73,9 @@ const translations = {
     deleteSeller: 'Delete Seller',
     sellerSaved: 'Seller saved successfully',
     sellerDeleted: 'Seller deleted successfully',
+    saving: 'Saving...',
+    deleting: 'Deleting...',
+    update: 'Update',
 
     // Reports
     weeklyReport: 'Weekly Report',
@@ -140,6 +144,7 @@ const translations = {
 
     // Navigation
     dashboard: 'Dashboard',
+    backToDashboard: 'San kɔ Dashboard',
     attendance: 'Attendance',
     payments: 'Sika a wɔde ba',
     reports: 'Amanneɛbɔ',
@@ -192,6 +197,9 @@ const translations = {
     deleteSeller: 'Yi atɔnni fi hɔ',
     sellerSaved: 'Atɔnni a wɔakora no yɛ',
     sellerDeleted: 'Atɔnni a wɔayi no yɛ',
+    saving: 'Rekora...',
+    deleting: 'Reyi...',
+    update: 'Sesa',
 
     // Reports
     weeklyReport: 'Dapɛn biara amanneɛbɔ',
