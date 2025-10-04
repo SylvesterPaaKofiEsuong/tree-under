@@ -3,6 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useCollection, useFirestore } from '../hooks/useFirestore';
 import { useCamera } from '../hooks/useCamera';
+import toast from 'react-hot-toast';
 import { 
   CreditCard, 
   ArrowLeft, 
@@ -99,7 +100,7 @@ export default function Payments({ onNavigate }) {
       await openCamera();
     } catch (error) {
       console.error('Camera error:', error);
-      alert(cameraError || 'Unable to access camera. Please check permissions.');
+      toast.error(cameraError || 'Unable to access camera. Please check permissions.');
       setShowCamera(false);
     }
   };
@@ -124,9 +125,12 @@ export default function Payments({ onNavigate }) {
   
   const handleCollectPayment = async (sellerData) => {
     if (!capturedPhoto) {
-      alert('Please take a receipt photo first.');
+      toast.error('Please take a receipt photo first.');
       return;
     }
+    
+    // Show loading toast
+    const loadingToast = toast.loading('Processing payment...');
     
     try {
       const paymentRecord = {
@@ -144,6 +148,7 @@ export default function Payments({ onNavigate }) {
         timestamp: new Date().toISOString()
       };
       
+      // Wait for the document to be added to Firestore
       const newPayment = await addDocument(paymentRecord);
       
       // Mark seller as just paid for immediate UI feedback
@@ -163,14 +168,23 @@ export default function Payments({ onNavigate }) {
           return newSet;
         });
         setRefreshKey(prev => prev + 1);
-      }, 2000);
+      }, 3000);
       
-      // Show success message
-      alert(`Payment of ${formatCurrency(sellerData.feeAmount)} collected successfully for ${sellerData.name}!`);
+      // Dismiss loading toast and show success
+      toast.dismiss(loadingToast);
+      toast.success(`Payment of ${formatCurrency(sellerData.feeAmount)} collected successfully for ${sellerData.name}!`);
       
     } catch (error) {
       console.error('Payment collection error:', error);
-      alert('Failed to record payment. Please try again.');
+      toast.dismiss(loadingToast);
+      toast.error('Failed to record payment. Please try again.');
+      
+      // Remove from just paid if it was added
+      setJustPaidSellers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(sellerData.id);
+        return newSet;
+      });
     }
   };
   
