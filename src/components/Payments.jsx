@@ -74,6 +74,8 @@ export default function Payments({ onNavigate }) {
       // Check if already paid this week or just paid
       const existingPayment = existingPayments.find(payment => payment.sellerId === seller.id);
       const isJustPaid = justPaidSellers.has(seller.id);
+      
+      // Seller is paid if they have an existing payment OR are in justPaidSellers
       const isPaid = !!existingPayment || isJustPaid;
       
       return {
@@ -82,7 +84,7 @@ export default function Payments({ onNavigate }) {
         feeAmount,
         isPaid,
         paymentRecord: existingPayment,
-        isJustPaid,
+        isJustPaid: isJustPaid && !existingPayment, // Only show "Just Paid" if no existing payment yet
         // Add a key for React to detect changes
         paymentStatus: isPaid ? 'paid' : (feeAmount > 0 ? 'pending' : 'no_work')
       };
@@ -93,6 +95,29 @@ export default function Payments({ onNavigate }) {
   const totalCollectable = paymentData.reduce((sum, seller) => sum + (seller.isPaid ? 0 : seller.feeAmount), 0);
   const totalCollected = paymentData.reduce((sum, seller) => sum + (seller.isPaid ? seller.feeAmount : 0), 0);
   const totalOutstanding = totalCollectable;
+  
+  // Automatically clean up justPaidSellers when Firestore payments appear
+  useEffect(() => {
+    if (existingPayments.length > 0 && justPaidSellers.size > 0) {
+      const existingPaymentSellerIds = new Set(existingPayments.map(p => p.sellerId));
+      
+      // Check if any justPaidSellers now have existing payments
+      const sellersToRemove = [];
+      justPaidSellers.forEach(sellerId => {
+        if (existingPaymentSellerIds.has(sellerId)) {
+          sellersToRemove.push(sellerId);
+        }
+      });
+      
+      if (sellersToRemove.length > 0) {
+        setJustPaidSellers(prev => {
+          const newSet = new Set(prev);
+          sellersToRemove.forEach(sellerId => newSet.delete(sellerId));
+          return newSet;
+        });
+      }
+    }
+  }, [existingPayments, justPaidSellers]);
   
   const handleTakePhoto = async () => {
     try {
@@ -160,15 +185,8 @@ export default function Payments({ onNavigate }) {
       setPhotoPreview(null);
       setPaymentNotes('');
       
-      // Clear the "just paid" status after Firestore has had time to update
-      setTimeout(() => {
-        setJustPaidSellers(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(sellerData.id);
-          return newSet;
-        });
-        setRefreshKey(prev => prev + 1);
-      }, 3000);
+      // Don't automatically clear the "just paid" status
+      // It will be cleared when we detect the Firestore payment exists
       
       // Dismiss loading toast and show success
       toast.dismiss(loadingToast);
