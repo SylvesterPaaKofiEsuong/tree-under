@@ -37,15 +37,15 @@ export async function fetchDashboardStats() {
       console.log('Found sellers:', totalSellers);
 
       // Fetch today's attendance (handle if collection doesn't exist)
+      // Note: Attendance records exist = present, no 'present' field needed
+      const todayStr = format(today, 'yyyy-MM-dd');
       const attendanceQuery = query(
         collection(db, 'attendance'),
-        where('date', '>=', Timestamp.fromDate(todayStart)),
-        where('date', '<=', Timestamp.fromDate(todayEnd)),
-        where('present', '==', true)
+        where('date', '==', todayStr)
       );
       const attendanceSnapshot = await getDocs(attendanceQuery);
       presentToday = attendanceSnapshot.size;
-      console.log('Present today:', presentToday);
+      console.log('Present today:', presentToday, 'for date:', todayStr);
 
       // Fetch this week's payments (handle if collection doesn't exist)
       const paymentsQuery = query(
@@ -112,12 +112,14 @@ async function calculateOutstandingFees(sellerDocs, weekStart, weekEnd) {
       const feeRate = sellerData.feeRate || 0;
 
       // Count attendance days for this seller this week
+      // Note: Attendance uses string dates, not Timestamps
+      const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+      const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
       const attendanceQuery = query(
         collection(db, 'attendance'),
         where('sellerId', '==', sellerId),
-        where('date', '>=', Timestamp.fromDate(weekStart)),
-        where('date', '<=', Timestamp.fromDate(weekEnd)),
-        where('present', '==', true)
+        where('date', '>=', weekStartStr),
+        where('date', '<=', weekEndStr)
       );
       const attendanceSnapshot = await getDocs(attendanceQuery);
       const attendanceDays = attendanceSnapshot.size;
@@ -186,7 +188,7 @@ export async function fetchRecentActivity(limit = 10) {
         type: 'attendance',
         ...attendance,
         id: doc.id,
-        timestamp: attendance.date.toDate()
+        timestamp: new Date(attendance.date) // Convert string date to Date object
       });
     });
 
@@ -229,11 +231,12 @@ export async function fetchWeeklySummary(weeksBack = 4) {
       });
 
       // Fetch attendance count for this week
+      const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+      const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
       const attendanceQuery = query(
         collection(db, 'attendance'),
-        where('date', '>=', Timestamp.fromDate(weekStart)),
-        where('date', '<=', Timestamp.fromDate(weekEnd)),
-        where('present', '==', true)
+        where('date', '>=', weekStartStr),
+        where('date', '<=', weekEndStr)
       );
       const attendanceSnapshot = await getDocs(attendanceQuery);
       
