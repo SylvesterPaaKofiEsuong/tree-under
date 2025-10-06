@@ -21,15 +21,31 @@ export default function Dashboard({ onNavigate }) {
     outstandingFees: 0
   });
 
-  // Mock data - replace with real data from Firebase
+  // Fetch real data from Firebase
   useEffect(() => {
-    // This would normally fetch real data from Firestore
-    setStats({
-      totalSellers: 42,
-      presentToday: 38,
-      weeklyCollection: 1850,
-      outstandingFees: 120
-    });
+    const fetchDashboardStats = async () => {
+      try {
+        // TODO: Implement real data fetching from Firestore
+        // For now, initialize with zeros until real data is connected
+        setStats({
+          totalSellers: 0,
+          presentToday: 0,
+          weeklyCollection: 0,
+          outstandingFees: 0
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        // Set to zeros on error
+        setStats({
+          totalSellers: 0,
+          presentToday: 0,
+          weeklyCollection: 0,
+          outstandingFees: 0
+        });
+      }
+    };
+
+    fetchDashboardStats();
   }, []);
 
   const quickActions = [
@@ -95,37 +111,37 @@ export default function Dashboard({ onNavigate }) {
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
           {t('dashboard')}
         </h1>
-        <p className="text-gray-600">
+        <p className="text-sm sm:text-base text-gray-600">
           {getCurrentWeekRange()}
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
         {statCards.map((stat, index) => (
-          <div key={index} className="card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
+          <div key={index} className="card p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 mb-2">
                   {stat.title}
                 </p>
-                <p className="text-2xl font-semibold text-gray-900 mt-2">
+                <p className="text-lg sm:text-2xl font-semibold text-gray-900">
                   {stat.value}
                 </p>
                 {stat.change && (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
                     {stat.change} attendance
                   </p>
                 )}
               </div>
-              <div className={`p-3 rounded-lg ${stat.color}`}>
-                <stat.icon size={24} />
+              <div className={`p-2 sm:p-3 rounded-lg ${stat.color} self-end sm:self-auto mt-2 sm:mt-0`}>
+                <stat.icon size={20} className="sm:w-6 sm:h-6" />
               </div>
             </div>
           </div>
@@ -133,26 +149,26 @@ export default function Dashboard({ onNavigate }) {
       </div>
 
       {/* Quick Actions */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+      <div className="mb-6 sm:mb-8">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
           {t('quickActions')}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {quickActions.map((action, index) => (
             <button
               key={index}
               onClick={action.action}
-              className="card p-6 text-left hover:shadow-lg transition-shadow duration-200 group"
+              className="card p-4 sm:p-6 text-left hover:shadow-lg transition-shadow duration-200 group"
             >
-              <div className="flex items-center mb-4">
-                <div className={`${action.color} p-3 rounded-lg text-white group-hover:scale-110 transition-transform duration-200`}>
-                  <action.icon size={24} />
+              <div className="flex items-center mb-3 sm:mb-4">
+                <div className={`${action.color} p-2 sm:p-3 rounded-lg text-white group-hover:scale-110 transition-transform duration-200`}>
+                  <action.icon size={20} className="sm:w-6 sm:h-6" />
                 </div>
               </div>
-              <h3 className="font-medium text-gray-900 mb-2">
+              <h3 className="text-sm sm:text-base font-medium text-gray-900 mb-1 sm:mb-2">
                 {action.title}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">
                 {action.description}
               </p>
             </button>
@@ -161,10 +177,10 @@ export default function Dashboard({ onNavigate }) {
       </div>
 
       {/* Today's Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Attendance Summary */}
-        <div className="card p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
+        <div className="card p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
             Today's Attendance
           </h3>
           <div className="space-y-3">
@@ -190,8 +206,8 @@ export default function Dashboard({ onNavigate }) {
         </div>
 
         {/* Payment Summary */}
-        <div className="card p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
+        <div className="card p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
             This Week's Collections
           </h3>
           <div className="space-y-3">

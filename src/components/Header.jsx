@@ -43,15 +43,17 @@ export default function Header({ onMenuClick, isOffline = false }) {
             </button>
             
             <div className="flex items-center ml-2 md:ml-0">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mr-3">
+              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mr-2 md:mr-3 flex-shrink-0">
                 <span className="text-sm font-bold text-white">TUC</span>
               </div>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">
-                  Tree Under Checklist
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm md:text-lg font-semibold text-gray-900 truncate">
+                  <span className="hidden sm:inline">Tree Under Checklist</span>
+                  <span className="sm:hidden">Under Checklist</span>
                 </h1>
-                <p className="text-xs text-gray-500">
-                  {currentUser?.name} • {currentUser?.role}
+                <p className="text-xs text-gray-500 truncate">
+                  <span className="hidden sm:inline">{currentUser?.name} • </span>
+                  <span className="capitalize">{currentUser?.role}</span>
                 </p>
               </div>
             </div>
