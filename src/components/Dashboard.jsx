@@ -97,7 +97,7 @@ export default function Dashboard({ onNavigate }) {
       value: stats.presentToday,
       icon: CheckCircle,
       color: 'text-green-600 bg-green-50',
-      change: `${Math.round((stats.presentToday / stats.totalSellers) * 100)}%`
+      change: stats.totalSellers > 0 ? `${Math.round((stats.presentToday / stats.totalSellers) * 100)}%` : null
     },
     {
       title: t('weeklyCollection'),

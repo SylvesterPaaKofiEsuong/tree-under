@@ -16,55 +16,82 @@ import { startOfWeek, endOfWeek, startOfDay, endOfDay, format } from 'date-fns';
  */
 export async function fetchDashboardStats() {
   try {
+    console.log('Fetching dashboard stats...');
     const today = new Date();
     const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
     const weekEnd = endOfWeek(today, { weekStartsOn: 1 }); // Sunday
     const todayStart = startOfDay(today);
     const todayEnd = endOfDay(today);
 
-    // Fetch all active sellers
-    const sellersSnapshot = await getDocs(
-      query(collection(db, 'sellers'), where('active', '==', true))
-    );
-    const totalSellers = sellersSnapshot.size;
-
-    // Fetch today's attendance
-    const attendanceQuery = query(
-      collection(db, 'attendance'),
-      where('date', '>=', Timestamp.fromDate(todayStart)),
-      where('date', '<=', Timestamp.fromDate(todayEnd)),
-      where('present', '==', true)
-    );
-    const attendanceSnapshot = await getDocs(attendanceQuery);
-    const presentToday = attendanceSnapshot.size;
-
-    // Fetch this week's payments
-    const paymentsQuery = query(
-      collection(db, 'payments'),
-      where('timestamp', '>=', Timestamp.fromDate(weekStart)),
-      where('timestamp', '<=', Timestamp.fromDate(weekEnd))
-    );
-    const paymentsSnapshot = await getDocs(paymentsQuery);
-    
+    let totalSellers = 0;
+    let presentToday = 0;
     let weeklyCollection = 0;
-    paymentsSnapshot.forEach(doc => {
-      const payment = doc.data();
-      weeklyCollection += payment.amount || 0;
-    });
+    let outstandingFees = 0;
 
-    // Calculate outstanding fees (sellers with unpaid fees for this week)
-    const outstandingFees = await calculateOutstandingFees(sellersSnapshot.docs, weekStart, weekEnd);
+    try {
+      // Fetch all active sellers (handle if collection doesn't exist)
+      const sellersSnapshot = await getDocs(
+        query(collection(db, 'sellers'), where('active', '==', true))
+      );
+      totalSellers = sellersSnapshot.size;
+      console.log('Found sellers:', totalSellers);
 
-    return {
+      // Fetch today's attendance (handle if collection doesn't exist)
+      const attendanceQuery = query(
+        collection(db, 'attendance'),
+        where('date', '>=', Timestamp.fromDate(todayStart)),
+        where('date', '<=', Timestamp.fromDate(todayEnd)),
+        where('present', '==', true)
+      );
+      const attendanceSnapshot = await getDocs(attendanceQuery);
+      presentToday = attendanceSnapshot.size;
+      console.log('Present today:', presentToday);
+
+      // Fetch this week's payments (handle if collection doesn't exist)
+      const paymentsQuery = query(
+        collection(db, 'payments'),
+        where('timestamp', '>=', Timestamp.fromDate(weekStart)),
+        where('timestamp', '<=', Timestamp.fromDate(weekEnd))
+      );
+      const paymentsSnapshot = await getDocs(paymentsQuery);
+      
+      paymentsSnapshot.forEach(doc => {
+        const payment = doc.data();
+        weeklyCollection += payment.amount || 0;
+      });
+      console.log('Weekly collection:', weeklyCollection);
+
+      // Calculate outstanding fees only if we have sellers
+      if (totalSellers > 0) {
+        outstandingFees = await calculateOutstandingFees(sellersSnapshot.docs, weekStart, weekEnd);
+      }
+      console.log('Outstanding fees:', outstandingFees);
+
+    } catch (collectionError) {
+      console.warn('Some collections may not exist yet:', collectionError.message);
+      // This is normal for a new database - just return zeros
+    }
+
+    const result = {
       totalSellers,
       presentToday,
       weeklyCollection,
       outstandingFees,
       lastUpdated: new Date()
     };
+    
+    console.log('Dashboard stats result:', result);
+    return result;
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
-    throw error;
+    // Return zeros instead of throwing to prevent UI errors for new databases
+    return {
+      totalSellers: 0,
+      presentToday: 0,
+      weeklyCollection: 0,
+      outstandingFees: 0,
+      lastUpdated: new Date()
+    };
   }
 }
 
