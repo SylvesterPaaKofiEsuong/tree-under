@@ -390,20 +390,20 @@ export default function Payments({ onNavigate }) {
                   {seller.isPaid ? (
                     <button
                       onClick={() => alert('Payment already collected')}
-                      className="btn btn-secondary flex items-center w-full sm:w-auto justify-center"
+                      className="btn btn-secondary flex items-center w-full sm:w-auto justify-center text-sm px-3 py-2"
                       disabled
                     >
-                      <CheckCircle size={16} className="mr-2" />
+                      <CheckCircle size={14} className="mr-1" />
                       <span className="hidden sm:inline">Collected</span>
                       <span className="sm:hidden">Paid</span>
                     </button>
                   ) : seller.feeAmount > 0 ? (
                     <button
                       onClick={() => openPaymentModal(seller)}
-                      className="btn btn-primary flex items-center w-full sm:w-auto justify-center"
+                      className="btn btn-primary flex items-center w-full sm:w-auto justify-center text-sm px-3 py-2"
                     >
-                      <DollarSign size={16} className="mr-2" />
-                      <span className="hidden sm:inline">Collect {formatCurrency(seller.feeAmount)}</span>
+                      <DollarSign size={14} className="mr-1" />
+                      <span className="hidden sm:inline truncate">Collect</span>
                       <span className="sm:hidden">Collect</span>
                     </button>
                   ) : (
