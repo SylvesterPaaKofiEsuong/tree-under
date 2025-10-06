@@ -33,23 +33,16 @@ export default function Header({ onMenuClick, isOffline = false }) {
 
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Left side - Menu button and title */}
+          {/* Left side - Logo and title */}
           <div className="flex items-center">
-            <button
-              onClick={onMenuClick}
-              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 md:hidden"
-            >
-              <Menu size={24} />
-            </button>
-            
-            <div className="flex items-center ml-2 md:ml-0">
+            <div className="flex items-center">
               <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mr-2 md:mr-3 flex-shrink-0">
                 <span className="text-sm font-bold text-white">TUC</span>
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-sm md:text-lg font-semibold text-gray-900 truncate">
                   <span className="hidden sm:inline">Tree Under Checklist</span>
-                  <span className="sm:hidden">Under Checklist</span>
+                  <span className="sm:hidden">Checklist</span>
                 </h1>
                 <p className="text-xs text-gray-500 truncate">
                   <span className="hidden sm:inline">{currentUser?.name} • </span>
