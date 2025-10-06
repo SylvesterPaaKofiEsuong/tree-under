@@ -8,9 +8,11 @@ import {
   Calendar,
   Camera,
   FileText,
-  Settings
+  Settings,
+  RefreshCw
 } from 'lucide-react';
 import { formatCurrency, getCurrentWeekRange } from '../lib/utils';
+import { fetchDashboardStats } from '../lib/dashboardService';
 
 export default function Dashboard({ onNavigate }) {
   const { t } = useLanguage();
@@ -20,33 +22,36 @@ export default function Dashboard({ onNavigate }) {
     weeklyCollection: 0,
     outstandingFees: 0
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   // Fetch real data from Firebase
-  useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        // TODO: Implement real data fetching from Firestore
-        // For now, initialize with zeros until real data is connected
-        setStats({
-          totalSellers: 0,
-          presentToday: 0,
-          weeklyCollection: 0,
-          outstandingFees: 0
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-        // Set to zeros on error
-        setStats({
-          totalSellers: 0,
-          presentToday: 0,
-          weeklyCollection: 0,
-          outstandingFees: 0
-        });
-      }
-    };
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const dashboardData = await fetchDashboardStats();
+      setStats(dashboardData);
+      setLastUpdated(dashboardData.lastUpdated);
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      setError('Failed to load dashboard data. Please try again.');
+      // Keep existing stats on error
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchDashboardStats();
+  useEffect(() => {
+    loadDashboardData();
   }, []);
+
+  // Refresh data function
+  const refreshData = () => {
+    loadDashboardData();
+  };
 
   const quickActions = [
     {
@@ -114,12 +119,42 @@ export default function Dashboard({ onNavigate }) {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-          {t('dashboard')}
-        </h1>
-        <p className="text-sm sm:text-base text-gray-600">
-          {getCurrentWeekRange()}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              {t('dashboard')}
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600">
+              {getCurrentWeekRange()}
+            </p>
+            {lastUpdated && (
+              <p className="text-xs text-gray-500 mt-1">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={refreshData}
+            disabled={loading}
+            className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors disabled:opacity-50"
+            title="Refresh data"
+          >
+            <RefreshCw size={16} className={`mr-1 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+        </div>
+        
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{error}</p>
+            <button
+              onClick={refreshData}
+              className="mt-2 text-sm text-red-700 hover:text-red-800 underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -131,17 +166,21 @@ export default function Dashboard({ onNavigate }) {
                 <p className="text-xs sm:text-sm font-medium text-gray-600 mb-2">
                   {stat.title}
                 </p>
-                <p className="text-lg sm:text-2xl font-semibold text-gray-900">
-                  {stat.value}
-                </p>
+                {loading ? (
+                  <div className="animate-pulse h-7 sm:h-8 bg-gray-200 rounded w-16 sm:w-24"></div>
+                ) : (
+                  <p className="text-lg sm:text-2xl font-semibold text-gray-900">
+                    {stat.value}
+                  </p>
+                )}
                 {stat.change && (
                   <p className="text-xs sm:text-sm text-gray-500 mt-1">
                     {stat.change} attendance
                   </p>
                 )}
               </div>
-              <div className={`p-2 sm:p-3 rounded-lg ${stat.color} self-end sm:self-auto mt-2 sm:mt-0`}>
-                <stat.icon size={20} className="sm:w-6 sm:h-6" />
+              <div className={`p-2 sm:p-3 rounded-lg ${loading ? 'bg-gray-200' : stat.color} self-end sm:self-auto mt-2 sm:mt-0`}>
+                <stat.icon size={20} className={`sm:w-6 sm:h-6 ${loading ? 'text-gray-400' : ''}`} />
               </div>
             </div>
           </div>
