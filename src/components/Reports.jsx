@@ -13,8 +13,11 @@ import {
   FileText,
   Eye,
   Filter,
-  RefreshCw
+  RefreshCw,
+  FileDown
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { orderBy, where } from 'firebase/firestore';
 import { 
   format, 
@@ -175,6 +178,136 @@ export default function Reports({ onNavigate }) {
     URL.revokeObjectURL(url);
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(40);
+    doc.text('Reports & Analytics', pageWidth / 2, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text(
+      `Period: ${format(dateRange.start, 'MMM d, yyyy')} - ${format(dateRange.end, 'MMM d, yyyy')}`,
+      pageWidth / 2, 30, { align: 'center' }
+    );
+    
+    doc.text(`Generated: ${format(new Date(), 'MMM d, yyyy h:mm a')}`, pageWidth / 2, 35, { align: 'center' });
+    
+    // Summary Statistics
+    doc.setFontSize(16);
+    doc.setTextColor(40);
+    doc.text('Summary Statistics', 20, 50);
+    
+    const summaryData = [
+      ['Total Revenue', formatCurrency(summaryStats.totalRevenue)],
+      ['Payments Collected', summaryStats.totalPayments.toString()],
+      ['Active Sellers', summaryStats.uniqueSellers.toString()],
+      ['Attendance Days', summaryStats.totalAttendanceDays.toString()],
+      ['Avg per Week', formatCurrency(summaryStats.avgRevenuePerWeek)]
+    ];
+    
+    doc.autoTable({
+      head: [['Metric', 'Value']],
+      body: summaryData,
+      startY: 55,
+      theme: 'striped',
+      headStyles: { fillColor: [59, 130, 246] },
+      styles: { fontSize: 10 },
+      margin: { left: 20, right: 20 }
+    });
+    
+    // Weekly Trends
+    let finalY = doc.lastAutoTable.finalY + 15;
+    
+    if (finalY > pageHeight - 60) {
+      doc.addPage();
+      finalY = 20;
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(40);
+    doc.text('Weekly Revenue Trends', 20, finalY);
+    
+    const trendsData = weeklyTrends.map(week => [
+      week.label,
+      formatCurrency(week.revenue),
+      week.attendanceDays.toString(),
+      week.uniqueSellers.toString()
+    ]);
+    
+    doc.autoTable({
+      head: [['Week', 'Revenue', 'Attendance Days', 'Unique Sellers']],
+      body: trendsData,
+      startY: finalY + 5,
+      theme: 'striped',
+      headStyles: { fillColor: [34, 197, 94] },
+      styles: { fontSize: 9 },
+      margin: { left: 20, right: 20 }
+    });
+    
+    // Seller Performance
+    finalY = doc.lastAutoTable.finalY + 15;
+    
+    if (finalY > pageHeight - 60) {
+      doc.addPage();
+      finalY = 20;
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(40);
+    doc.text('Seller Performance', 20, finalY);
+    
+    const performanceData = sellerPerformance.map(seller => [
+      seller.name,
+      seller.product,
+      seller.daysWorked.toString(),
+      formatCurrency(seller.totalPaid),
+      formatCurrency(seller.averagePerDay),
+      formatPercent(seller.collectionRate),
+      seller.active ? 'Active' : 'Inactive'
+    ]);
+    
+    doc.autoTable({
+      head: [['Seller', 'Product', 'Days', 'Total Paid', 'Avg/Day', 'Collection Rate', 'Status']],
+      body: performanceData,
+      startY: finalY + 5,
+      theme: 'striped',
+      headStyles: { fillColor: [147, 51, 234] },
+      styles: { fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 15 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 18 }
+      },
+      margin: { left: 20, right: 20 }
+    });
+    
+    // Footer
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(
+        `Page ${i} of ${totalPages} | Tree Under Checklist - Reports`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: 'center' }
+      );
+    }
+    
+    // Save the PDF
+    doc.save(`reports-analytics-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
   if (isLoading) {
     return (
       <div className="p-6 max-w-7xl mx-auto">
@@ -199,22 +332,33 @@ export default function Reports({ onNavigate }) {
       
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Reports & Analytics
             </h1>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               {format(dateRange.start, 'MMM d, yyyy')} - {format(dateRange.end, 'MMM d, yyyy')}
             </p>
           </div>
-          <button
-            onClick={exportToCSV}
-            className="btn btn-primary flex items-center"
-          >
-            <Download size={16} className="mr-2" />
-            Export CSV
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <button
+              onClick={exportToCSV}
+              className="btn btn-secondary flex items-center justify-center text-sm"
+            >
+              <Download size={16} className="mr-2" />
+              <span className="hidden sm:inline">Export CSV</span>
+              <span className="sm:hidden">CSV</span>
+            </button>
+            <button
+              onClick={exportToPDF}
+              className="btn btn-primary flex items-center justify-center text-sm"
+            >
+              <FileDown size={16} className="mr-2" />
+              <span className="hidden sm:inline">Export PDF</span>
+              <span className="sm:hidden">PDF</span>
+            </button>
+          </div>
         </div>
       </div>
 
