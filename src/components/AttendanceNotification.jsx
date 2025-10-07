@@ -7,7 +7,12 @@ import {
   Zap,
   Settings
 } from 'lucide-react';
-import { snoozeNotifications, dismissNotificationsForToday } from '../lib/notificationService';
+import { 
+  snoozeNotifications, 
+  dismissNotificationsForToday,
+  playNotificationSound,
+  getNotificationPreferences
+} from '../lib/notificationService';
 
 export default function AttendanceNotification({ 
   status, 
@@ -17,6 +22,21 @@ export default function AttendanceNotification({
 }) {
   const [isVisible, setIsVisible] = useState(true);
   const [showSnoozeOptions, setShowSnoozeOptions] = useState(false);
+  
+  // Play sound when notification first appears
+  React.useEffect(() => {
+    if (status && status.shouldNotify) {
+      const preferences = getNotificationPreferences();
+      if (preferences.playSound) {
+        // Slight delay to ensure component is mounted
+        setTimeout(() => {
+          const soundType = status.priority === 'high' ? 'urgent' : 
+                          status.priority === 'medium' ? 'gentle' : 'chime';
+          playNotificationSound(soundType);
+        }, 100);
+      }
+    }
+  }, [status]);
 
   if (!status || !status.shouldNotify || !isVisible) {
     return null;

@@ -5,12 +5,16 @@ import {
   Clock, 
   Settings as SettingsIcon,
   Save,
-  X
+  X,
+  Volume2,
+  VolumeX,
+  Play
 } from 'lucide-react';
 import { 
   getNotificationPreferences, 
   saveNotificationPreferences,
-  requestNotificationPermission 
+  requestNotificationPermission,
+  playNotificationSound
 } from '../lib/notificationService';
 
 export default function NotificationSettings({ onClose, className = '' }) {
@@ -55,6 +59,10 @@ export default function NotificationSettings({ onClose, className = '' }) {
   const handleRequestBrowserPermission = async () => {
     const permission = await requestNotificationPermission();
     setBrowserPermission(permission);
+  };
+  
+  const handleTestSound = (soundType) => {
+    playNotificationSound(soundType);
   };
 
   const formatHour = (hour) => {
@@ -183,6 +191,74 @@ export default function NotificationSettings({ onClose, className = '' }) {
               {browserPermission === 'granted' && (
                 <div className="text-sm text-green-600">
                   ✓ Browser notifications enabled
+                </div>
+              )}
+            </div>
+
+            {/* Sound Settings */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                <Volume2 size={16} className="mr-2 text-primary-600" />
+                Sound Settings
+              </h3>
+              
+              {/* Enable Sound */}
+              <div className="mb-4">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={preferences.playSound}
+                    onChange={(e) => handlePreferenceChange('playSound', e.target.checked)}
+                    className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                  />
+                  <div className="flex items-center space-x-2">
+                    {preferences.playSound ? (
+                      <Volume2 size={16} className="text-green-600" />
+                    ) : (
+                      <VolumeX size={16} className="text-gray-400" />
+                    )}
+                    <span className="text-sm text-gray-700">
+                      Play notification sounds
+                    </span>
+                  </div>
+                </label>
+              </div>
+              
+              {/* Sound Type Selection */}
+              {preferences.playSound && (
+                <div className="ml-7">
+                  <p className="text-xs text-gray-600 mb-2">Sound type:</p>
+                  <div className="space-y-2">
+                    {[
+                      { value: 'gentle', label: 'Gentle (Default)', description: 'Soft ascending chime' },
+                      { value: 'urgent', label: 'Urgent', description: 'Triple beep for high priority' },
+                      { value: 'chime', label: 'Bell Chime', description: 'Bell-like sequence' }
+                    ].map(sound => (
+                      <div key={sound.value} className="flex items-center justify-between">
+                        <label className="flex items-center space-x-2 cursor-pointer flex-1">
+                          <input
+                            type="radio"
+                            name="soundType"
+                            value={sound.value}
+                            checked={preferences.soundType === sound.value}
+                            onChange={(e) => handlePreferenceChange('soundType', e.target.value)}
+                            className="w-3 h-3 text-primary-600 focus:ring-primary-500"
+                          />
+                          <div>
+                            <span className="text-xs text-gray-700">{sound.label}</span>
+                            <p className="text-xs text-gray-500">{sound.description}</p>
+                          </div>
+                        </label>
+                        <button
+                          onClick={() => handleTestSound(sound.value)}
+                          className="p-1 text-gray-400 hover:text-primary-600 rounded transition-colors"
+                          title={`Test ${sound.label} sound`}
+                        >
+                          <Play size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

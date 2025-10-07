@@ -126,6 +126,8 @@ export function getNotificationPreferences() {
       showBanner: true,
       showToast: true,
       autoHide: true,
+      playSound: true,
+      soundType: 'gentle', // 'gentle', 'urgent', 'chime', 'none'
       hideUntil: null // Hide until specific time
     };
     
@@ -138,6 +140,8 @@ export function getNotificationPreferences() {
       showBanner: true,
       showToast: true,
       autoHide: true,
+      playSound: true,
+      soundType: 'gentle',
       hideUntil: null
     };
   }
@@ -234,10 +238,84 @@ export async function requestNotificationPermission() {
 }
 
 /**
+ * Play notification sound based on user preferences
+ * @param {string} soundType - Type of sound to play
+ */
+export function playNotificationSound(soundType = 'gentle') {
+  const preferences = getNotificationPreferences();
+  
+  if (!preferences.playSound || soundType === 'none') {
+    return;
+  }
+  
+  try {
+    // Create audio context for sound synthesis
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    const playTone = (frequency, duration, type = 'sine') => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = type;
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + duration);
+    };
+    
+    // Different sound patterns based on type
+    switch (soundType) {
+      case 'gentle':
+        // Soft ascending chime
+        playTone(523.25, 0.3); // C5
+        setTimeout(() => playTone(659.25, 0.3), 150); // E5
+        break;
+        
+      case 'urgent':
+        // More attention-grabbing sequence
+        playTone(880, 0.2); // A5
+        setTimeout(() => playTone(880, 0.2), 250);
+        setTimeout(() => playTone(880, 0.2), 500);
+        break;
+        
+      case 'chime':
+        // Bell-like sequence
+        playTone(1046.5, 0.4); // C6
+        setTimeout(() => playTone(783.99, 0.4), 200); // G5
+        setTimeout(() => playTone(659.25, 0.6), 400); // E5
+        break;
+        
+      default:
+        // Default gentle sound
+        playTone(523.25, 0.3);
+        break;
+    }
+  } catch (error) {
+    console.warn('Could not play notification sound:', error);
+    // Fallback to system beep if available
+    try {
+      // Simple beep as fallback
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmIdBzuG0/Pf'); audio.play();
+    } catch (fallbackError) {
+      // Silent fallback
+    }
+  }
+}
+
+/**
  * Show browser notification (if permission granted)
  * @param {Object} options - Notification options
  */
-export function showBrowserNotification({ title, message, actionText }) {
+export function showBrowserNotification({ title, message, actionText, playSound = true }) {
+  const preferences = getNotificationPreferences();
+  
   if (Notification.permission === 'granted') {
     const notification = new Notification(title || 'Attendance Reminder', {
       body: message,
@@ -245,6 +323,7 @@ export function showBrowserNotification({ title, message, actionText }) {
       badge: '/icon-192.png',
       tag: 'attendance-reminder',
       requireInteraction: true,
+      silent: !preferences.playSound, // Use user preference for sound
       actions: actionText ? [
         { action: 'take-attendance', title: actionText }
       ] : []
@@ -259,6 +338,11 @@ export function showBrowserNotification({ title, message, actionText }) {
     setTimeout(() => {
       notification.close();
     }, 10000);
+    
+    // Play custom sound for in-app notifications if enabled
+    if (playSound && preferences.playSound) {
+      playNotificationSound(preferences.soundType);
+    }
     
     return notification;
   }
