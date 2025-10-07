@@ -25,11 +25,13 @@
 1. **Daily Attendance Marking** - Simple tap to mark who showed up
 2. **Automatic Payment Calculation** - Based on actual days worked
 3. **Photo Receipts** - Camera integration with timestamp
-4. **Weekly Reports** - Show collected vs outstanding
-5. **Offline Mode** - Works without internet, syncs when online
-6. **Push Notifications** - Payment reminders
-7. **Dual Admin Access** - Both leader and assistant see everything
-8. **Bilingual** - Switch between English and Twi
+4. **Weekly Reports** - Show collected vs outstanding with PDF export
+5. **Attendance Reminders** - Smart notifications when attendance hasn't been taken
+6. **Configurable Notifications** - Customize reminder times and preferences
+7. **Offline Mode** - Works without internet, syncs when online
+8. **Browser Notifications** - Optional push notifications for background reminders
+9. **Dual Admin Access** - Both leader and assistant see everything
+10. **Bilingual** - Switch between English and Twi
 
 ---
 
@@ -66,10 +68,12 @@ tree-under-checklist/
 │   │   ├── Dashboard.jsx      # Main dashboard with stats
 │   │   ├── Attendance.jsx     # Attendance tracking (placeholder)
 │   │   ├── Payments.jsx       # Payment collection (placeholder)  
-│   │   ├── Reports.jsx        # Reports (placeholder)
+│   │   ├── Reports.jsx        # Reports with PDF export
 │   │   ├── SellerManagement.jsx # Seller management (placeholder)
 │   │   ├── Login.jsx          # PIN-based login
-│   │   └── Header.jsx         # App header with navigation
+│   │   ├── Header.jsx         # App header with navigation
+│   │   ├── AttendanceNotification.jsx # Attendance reminder banners
+│   │   └── NotificationSettings.jsx   # Notification preferences UI
 │   ├── contexts/
 │   │   ├── AuthContext.jsx    # Authentication state management
 │   │   └── LanguageContext.jsx # English/Twi translations
@@ -79,7 +83,9 @@ tree-under-checklist/
 │   │   └── useOfflineSync.js  # Offline state monitoring
 │   ├── lib/
 │   │   ├── firebase.js        # Firebase configuration
-│   │   └── utils.js           # Helper functions
+│   │   ├── utils.js           # Helper functions
+│   │   ├── dashboardService.js # Dashboard data fetching
+│   │   └── notificationService.js # Attendance reminder logic
 │   ├── App.jsx               # Main app component
 │   ├── main.jsx             # App entry point
 │   └── index.css            # Tailwind styles
@@ -249,6 +255,9 @@ Visit `http://localhost:5173` and login with PIN: `1234` or `5678`
 - [x] Dashboard with mock data
 - [x] Basic app navigation and routing
 - [x] Responsive design
+- [x] Attendance reminder notifications
+- [x] Notification settings and preferences
+- [x] PDF export functionality for reports
 
 ### 🚧 In Progress (Placeholders Created)
 - [ ] Attendance tracking functionality

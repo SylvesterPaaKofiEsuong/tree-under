@@ -13,6 +13,9 @@ import {
 } from 'lucide-react';
 import { formatCurrency, getCurrentWeekRange } from '../lib/utils';
 import { fetchDashboardStats } from '../lib/dashboardService';
+import { checkTodayAttendanceStatus, getNotificationPreferences } from '../lib/notificationService';
+import AttendanceNotification from './AttendanceNotification';
+import NotificationSettings from './NotificationSettings';
 
 export default function Dashboard({ onNavigate }) {
   const { t } = useLanguage();
@@ -25,6 +28,9 @@ export default function Dashboard({ onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [attendanceStatus, setAttendanceStatus] = useState(null);
+  const [showNotification, setShowNotification] = useState(false);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
 
   // Fetch real data from Firebase
   const loadDashboardData = async () => {
@@ -46,11 +52,49 @@ export default function Dashboard({ onNavigate }) {
 
   useEffect(() => {
     loadDashboardData();
+    checkAttendanceStatus();
   }, []);
+
+  // Set up periodic attendance checks (every 30 minutes)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkAttendanceStatus();
+    }, 30 * 60 * 1000); // 30 minutes
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Check attendance status
+  const checkAttendanceStatus = async () => {
+    try {
+      const status = await checkTodayAttendanceStatus();
+      setAttendanceStatus(status);
+      
+      // Check if we should show notification based on preferences
+      const preferences = getNotificationPreferences();
+      if (status.shouldNotify && preferences.enabled) {
+        setShowNotification(true);
+      }
+      
+    } catch (error) {
+      console.error('Error checking attendance status:', error);
+    }
+  };
+
+  // Notification handlers
+  const handleTakeAttendance = () => {
+    onNavigate('attendance');
+    setShowNotification(false);
+  };
+
+  const handleDismissNotification = () => {
+    setShowNotification(false);
+  };
 
   // Refresh data function
   const refreshData = () => {
     loadDashboardData();
+    checkAttendanceStatus();
   };
 
   const quickActions = [
@@ -133,15 +177,25 @@ export default function Dashboard({ onNavigate }) {
               </p>
             )}
           </div>
-          <button
-            onClick={refreshData}
-            disabled={loading}
-            className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors disabled:opacity-50"
-            title="Refresh data"
-          >
-            <RefreshCw size={16} className={`mr-1 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowNotificationSettings(true)}
+              className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
+              title="Notification settings"
+            >
+              <Settings size={16} className="mr-1" />
+              <span className="hidden sm:inline">Settings</span>
+            </button>
+            <button
+              onClick={refreshData}
+              disabled={loading}
+              className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors disabled:opacity-50"
+              title="Refresh data"
+            >
+              <RefreshCw size={16} className={`mr-1 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
         </div>
         
         {error && (
@@ -156,6 +210,16 @@ export default function Dashboard({ onNavigate }) {
           </div>
         )}
       </div>
+
+      {/* Attendance Notification */}
+      {showNotification && attendanceStatus && (
+        <AttendanceNotification
+          status={attendanceStatus}
+          onTakeAttendance={handleTakeAttendance}
+          onDismiss={handleDismissNotification}
+          className="mb-6"
+        />
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
@@ -271,6 +335,15 @@ export default function Dashboard({ onNavigate }) {
           </div>
         </div>
       </div>
+
+      {/* Notification Settings Modal */}
+      {showNotificationSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <NotificationSettings
+            onClose={() => setShowNotificationSettings(false)}
+          />
+        </div>
+      )}
     </div>
   );
 }
